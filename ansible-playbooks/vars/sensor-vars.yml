@@ -1,0 +1,19 @@
+---
+
+deploy_user: "pi"
+home_dir: "/home/{{ deploy_user }}"
+install_dir: "/home/{{ deploy_user }}/home-monitor"
+
+# mqtt & weather
+monitoring_db_path: "{{ install_dir }}/data/monitor_data.sqlite3"
+
+# mqtt only
+mqtt_py_venv_path: "{{ install_dir }}/venvs/mqtt_venv"
+
+# weather data
+weather_venv_path: "{{ install_dir }}/venvs/weather_venv"
+dwd_weather_station_id: "01975" #ID for Hamburg Fuhlsbuttle
+
+# backup-sqlite-db
+sqlite_db_path: "{{ monitoring_db_path }}"
+sqlite_backup_dir: "{{ install_dir }}/data/backups"

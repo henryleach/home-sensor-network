@@ -1,0 +1,9 @@
+---
+# setup-mqtt-server defaults
+deploy_user: "pi"
+install_dir: "/home/{{ deploy_user }}/home-monitor"
+mqtt_username: "mqtt-user-goes-here"
+mqtt_password: "mqtt-password-goes-here"
+mqtt_py_venv_path: "{{ install_dir }}/venvs/mqtt_venv"
+monitoring_db_path: "{{ install_dir }}/data/monitor_data.sqlite3"
+client_id: "home-recording"  # when connecting to MQTT broker

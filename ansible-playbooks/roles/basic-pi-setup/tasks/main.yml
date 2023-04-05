@@ -1,0 +1,35 @@
+---
+- name: Check if /boot/config.txt exists
+  # otherwise it's probably not a raspberry pi
+  stat:
+    path: "/boot/config.txt"
+  register: boot_config
+
+- name: Reduce GPU memory allocation on headless pi
+  lineinfile:
+    path: "/boot/config.txt"
+    line: "gpu_mem=16"
+    owner: root
+    group: root
+    mode: 0755
+    state: present
+  when: boot_config.stat.exists
+  notify: reboot machine
+
+- meta: flush_handlers
+  # If we've just changed the memory, we want to use
+  # the extra in subsequent tasks.
+
+- name: Update apt cache and repo
+  apt:
+    update_cache: yes
+    force_apt_get: yes
+    cache_valid_time: 3600
+
+# There is a semi-known issue on this, that it can't acquire the lock
+# on the package manager. https://github.com/ansible/ansible/issues/51663
+- name: Upgrade all apt packages
+  apt:
+    upgrade: dist
+    force_apt_get: yes
+  notify: reboot machine

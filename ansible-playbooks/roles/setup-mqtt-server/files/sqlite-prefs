@@ -1,0 +1,4 @@
+.mode markdown --wrap 40 -ww
+.headers on
+.separator ROW "\n"
+.nullvalue NULL

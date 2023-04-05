@@ -1,0 +1,3 @@
+---
+# sqlite_db_path: "{{ db_path }}" # essential for it to work.
+sqlite_backup_dir: "{{ install_dir }}/data/backups"

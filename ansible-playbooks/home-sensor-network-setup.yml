@@ -1,0 +1,20 @@
+---
+- hosts: all
+  become: yes
+
+
+  vars_file:
+    - vars/sensor-vars.yml
+    - vars/mqtt-passwords.yml
+  
+  pre_tasks:
+    - name: Update apt cache if needed.
+      apt: update_cache=yes cache_valid_time=3600
+      when: yes
+  
+  roles:
+    #- basic-pi-setup
+    #- basic-debian-setup  # logrotate, chrony etc. 
+    # - setup-weatherdata-collection
+    - setup-mqtt-server
+    # - backup-sqlite-db

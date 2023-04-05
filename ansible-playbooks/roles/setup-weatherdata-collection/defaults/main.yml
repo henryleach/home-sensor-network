@@ -1,0 +1,7 @@
+---
+# setup-weatherdata-collection defaults
+deploy_user: "pi"
+install_dir: "/home/{{ deploy_user }}"
+dwd_weather_station_id: "07341"  # Offenbach
+monitoring_db_path: "{{ install_dir }}/data/monitor_data.sqlite3"
+weather_venv_path: "{{ install_dir }}/venvs/weather_venv"

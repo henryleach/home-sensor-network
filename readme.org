@@ -1,0 +1,6 @@
+#+TITLE: Home Sensor Network Ansible Roles
+#+DATE: <2023-04-05 Wed>
+
+Contains various [[https://www.ansible.com/][Ansible]] roles for setting up a home sensor network on a Raspberry Pi server. Described in more detail in the blog post series on [[http://www.henryleach.com/2023/03/home-sensor-network-part-1-the-plan/][creating a home sensor network]]. For details please read those.
+
+

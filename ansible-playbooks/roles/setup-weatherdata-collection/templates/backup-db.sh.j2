@@ -1,0 +1,25 @@
+#!/bin/bash
+####
+# Backup file/directory passed in first argument into the directory given
+# in the second argument, which defaults to 'backups' in the directory
+# where the script is called from if there is no second argument.
+# Backup is a zipped tarball with a UTC timestamp appended to the original filename.
+####
+
+# use realpath <filname> to make sure we're using absolute paths
+backupfilepath=$(realpath ${1:?"Error: First argument, file to archive, is null"})
+# if no folder is given
+backupfolder=$(realpath ${2:-"backups"})
+
+date=$(date -u +%Y%m%d%H%MUTC)
+mkdir -p "$backupfolder"
+
+backupfile=$(basename -- "$backupfilepath")
+
+archivename="$backupfile-$date.tar.gz"
+archivelocation="$backupfolder/$archivename"
+echo "$archivelocation and $backupfilepath"
+# c: create, z:zip, f:filename (v:verbose) -C means it changes directory and then starts at /
+# then you can do the path without the leading /
+backupfilepath=$(echo "$backupfilepath" | sed 's ^/  ')
+tar -czf "$archivelocation" -C / "$backupfilepath" 

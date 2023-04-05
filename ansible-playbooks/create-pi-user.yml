@@ -1,0 +1,43 @@
+---
+- hosts: all
+  become: yes
+
+  vars:
+    pi_initial_password: "bananaphone"
+    password_salt: "L33t"
+
+  handlers:
+     - name: restart ssh
+       service:
+         name: sshd
+         state: restarted
+    
+  tasks:
+    - name: Ensure sudo group is present
+      group:
+        name: sudo
+        state: present
+
+    - name: Ensure passwordless sudo for automation
+      copy:
+        content: '%sudo ALL=(ALL:ALL) NOPASSWD:ALL'
+        dest: /etc/sudoers.d/sudo_nopasswd
+        mode: 0440
+        validate: visudo -cf %s
+
+    - name: Add pi user
+      user:
+        name: pi
+        state: present
+        groups: sudo
+        shell: /bin/bash
+        append: yes
+        create_home: yes
+        password: "{{ pi_initial_password | password_hash('sha512', password_salt) }}"
+#        password: "{{ pi_initial_password }}"
+
+    - name: deploy SSH key
+      authorized_key:
+        user: pi
+        key: "{{ lookup('file', 'keys/pi-server.pub') }}"
+        state: present

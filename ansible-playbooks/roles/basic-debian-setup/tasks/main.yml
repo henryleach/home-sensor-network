@@ -1,0 +1,82 @@
+---
+- name: Install dependencies
+  apt:
+    state: present
+    name:
+      - chrony
+      - unattended-upgrades
+      - logrotate  # looks like it's already installed and running?
+      - tmux  # always useful
+
+- name: Ensure chrony is running for accurate times
+  service:
+    name: chronyd
+    state: started
+    enabled: yes
+
+- name: Force system time update
+  command: "chronyc makestep"
+
+- name: Unsure SSH basics are set
+  lineinfile:
+    dest: "/etc/ssh/sshd_config"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    state: present
+    validate: 'sshd -t -f %s'
+  with_items:
+    - regexp: "^PasswordAuthentication"
+      line: "PasswordAuthentication no"
+    - regexp: "^PermitRootLogin"
+      line: "PermitRootLogin no"
+  notify: restart ssh
+
+# https://wiki.debian.org/UnattendedUpgrades
+- name: Copy unattended-upgrades configuration files in place.
+  template:
+    src: "{{ item }}.j2"
+    dest: "/etc/apt/apt.conf.d/{{ item }}"
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+    - 20auto-upgrades
+    - 50unattended-upgrades
+
+# We want to upgrades to happen at a more predictable time, e.g.
+# overnight, and only once a week, so not to disturb recording.
+
+- name: Create overrides folders for unattended-upgrades
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+    - "/etc/systemd/system/apt-daily.timer.d"
+    - "/etc/systemd/system/apt-daily-upgrade.timer.d"
+
+- name: Copy unattended-upgrades timer overrides
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: root
+    group: root
+    mode: 0644
+  with_items:
+    - { src: "downloads-override.conf",
+        dest: "/etc/systemd/system/apt-daily.timer.d/override.conf"}
+    - { src: "upgrade-override.conf",
+        dest: "/etc/systemd/system/apt-daily-upgrade.timer.d/override.conf"}
+
+- name: Restart unattended upgrade services to accept changes
+  systemd:
+    name: "{{ item }}"
+    daemon_reload: yes
+    enabled: yes
+    state: restarted
+  with_items:
+    - "apt-daily.timer"
+    - "apt-daily-upgrade.timer"
+    

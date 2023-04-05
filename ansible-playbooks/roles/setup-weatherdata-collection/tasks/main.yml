@@ -1,0 +1,76 @@
+---
+# main for setup-weather-monitor
+- name: Install dependencies
+  apt:
+    state: present
+    name:
+      - python3
+      - python3-venv
+      - git
+      - sqlite3
+
+- name: Create the folder for the DB
+  file:
+    path: "{{ install_dir }}/{{ item }}"
+    state: directory
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+  when: yes
+  with_items:
+    - "get-dwd-weather-data"
+    - "data"
+    - "venvs"
+
+- name: Clone get-dwd-weather-data Python scripts
+  git:
+    repo: "https://github.com/henryleach/get-dwd-weather-data"
+    dest: "{{ install_dir }}/get-dwd-weather-data"
+    force: true # throw away previous changes, as we'll customise elements in a moment.
+  become: yes
+  become_user: "{{ deploy_user }}"
+
+- name: Create python venv for monitoring
+  command:
+    cmd: "python3 -m venv /{{ weather_venv_path }} --upgrade-deps"
+    creates: "{{ weather_venv_path }}/bin/python3"
+    # Not clear how you can use the pip module to upgrade the pip installed.
+
+- name: Install packages in venv
+  pip:
+    executable: "{{ weather_venv_path }}/bin/pip3"
+    requirements: "{{ install_dir }}/get-dwd-weather-data/requirements.txt"      
+
+- name: Install weather config file
+  template:
+    src: "weather_config.ini.j2"
+    dest: "{{ install_dir }}/get-dwd-weather-data/weather_config.ini"
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: 0644
+
+- name: Run weather download once
+  shell:
+    chdir: "{{ install_dir }}/get-dwd-weather-data"
+    cmd: "{{ weather_venv_path }}/bin/python3 {{ install_dir }}/get-dwd-weather-data/get-dwd-weather.py"
+    creates: "{{ monitoring_db_path }}"
+  become: true
+  become_user: "{{ deploy_user }}" # otherwise it's run as root
+
+- name: Cron job for 10 Min weather DWD weather observations
+  cron:
+    user: "{{ deploy_user }}"
+    name: "10 min weather downloads"
+    minute: "*/10"
+    job: "{{ weather_venv_path}}/bin/python3 {{ install_dir }}/get-dwd-weather-data/get-dwd-weather.py > {{ install_dir }}/get-dwd-weather-data/cron_log.txt 2>&1"
+    state: present
+
+# also add to path?
+    
+# */10 * * * * /home/pi/venvs/mon-venv/bin/python3 /home/pi/get-dwd-weather-data/get-dwd-weather.py > ~/get-dwd-weather-data/cron_log.txt 2>&1
+
+  
+      # Is the better created with the pip module?
+      # How to set the owner to be pi, and not root?
+      # https://www.epilis.gr/en/blog/2016/04/26/python-virtualenv-management-ansible/
+      # There's also this shell command with a 'creates' section
+      # https://stackoverflow.com/questions/20575084/best-way-to-always-run-ansible-inside-a-virtualenv-on-remote-machines

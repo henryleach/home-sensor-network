@@ -1,0 +1,42 @@
+---
+- name: Install dependencies
+  apt:
+    state: present
+    name:
+      - python3
+
+- name: Create folder for backups
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: 0755
+  with_items:
+    - "{{ install_dir }}/backup-script"
+    - "{{ sqlite_backup_dir }}"
+
+- name: Copy DB backup script
+  copy:
+    src: "backup-sqlite-db.py"
+    dest: "{{ install_dir }}/backup-script/"
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: 0644
+
+- name: Ensure python3 is on cron path
+  cron:
+    user: "{{ deploy_user }}"
+    name: PATH
+    env: yes
+    job: "/usr/bin/python3"
+    state: present
+
+- name: Create daily cronjob for backing up DB
+  cron:
+    user: "{{ deploy_user }}"
+    name: "Daily DB backup"
+    minute: "1"
+    hour: "1"
+    job: "/usr/bin/python3 {{ install_dir }}/backup-script/backup-sqlite-db.py {{ monitoring_db_path }} -d {{ sqlite_backup_dir }} > {{ sqlite_backup_dir }}/backup_log.txt 2>&1"
+    state: present

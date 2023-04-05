@@ -1,0 +1,132 @@
+---
+- name: Install dependencies
+  apt:
+    state: present
+    name:
+      - python3
+      - python3-venv
+      - git
+      - sqlite3
+      - mosquitto
+      - mosquitto-clients  # needed for test script
+
+- name: Create the folder for the DB
+  file:
+    path: "{{ install_dir }}/{{ item }}"
+    state: directory
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+  when: yes
+  with_items:
+    - "store-mqtt-data"
+    - "{{ monitoring_db_path | dirname }}"
+
+- name: Copy .sqliterc file, makes checking DB much easier
+  copy:
+    src: "sqlite-prefs"
+    dest: "/home/{{ deploy_user }}/.sqliterc"
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: 0644
+
+- name: Delete old password file
+  file:
+    path: "/etc/mosquitto/passwords.txt"
+    state: absent
+    # If not deleted we end up hashing a hash,
+    # which breaks the permissions
+
+- name: Set Mosquitto configuration
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: root
+    group: root
+  with_items:
+    - { src: "mosquitto.conf.j2", dest: "/etc/mosquitto/mosquitto.conf" }
+    - { src: "passwords.txt.j2", dest: "/etc/mosquitto/passwords.txt" }
+
+- name: Hash the mosquitto password file 
+  shell:
+    chdir: "/etc/mosquitto"
+    cmd: "mosquitto_passwd -U passwords.txt"
+  # Always re-copy the password file first
+  # otherwise you will hash the previous hash
+  # making it useless
+
+- name: Get mosquitto broker status
+  systemd:
+    name: "mosquitto.service"
+  register: mosquitto_service_status
+
+- debug:
+    var: mosquitto_service_status.status.ActiveState
+
+- name: Start the mosquitto broker
+  service:
+    name: mosquitto
+    state: started
+    enabled: yes
+  when: mosquitto_service_status.status.ActiveState != "active"
+
+- name: Restart mosquitto broker if already running
+  service:
+    name: mosquitto
+    state: restarted
+  when: mosquitto_service_status.status.ActiveState == "active"
+
+- name: Clone store-mqtt-data python scripts
+  git:
+    repo: "https://github.com/henryleach/store-mqtt-data.git"
+    dest: "{{ install_dir }}/store-mqtt-data"
+    force: true  # throw away old changes
+  become: yes
+  become_user: "{{ deploy_user }}"
+
+- name: Set store-mqtt-data config
+  template:
+    src: "store-mqtt-data.conf.j2"
+    dest: "{{ install_dir }}/store-mqtt-data/store-mqtt-data.conf"
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: 0644
+
+- name: create python venv for monitoring
+  command:
+    cmd: "python3 -m venv /{{ mqtt_py_venv_path }} --upgrade-deps"
+    creates: "{{ mqtt_py_venv_path }}/bin/activate"
+
+- name: Install packages in venv
+  pip:
+    executable: "{{ mqtt_py_venv_path }}/bin/pip3"
+    requirements: "{{ install_dir }}/store-mqtt-data/requirements.txt"
+
+- name: Install systemd unit file
+  template:
+    src: "store-mqtt-data.service.j2"
+    dest: "/usr/lib/systemd/system/store-mqtt-data.service"
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Get store-mqtt-data service status
+  systemd:
+    name: "store-mqtt-data"
+  register: mqttdata_service_status
+
+- debug:
+    var: mqttdata_service_status.status.ActiveState
+    
+- name: Start store-mqtt-data as a service
+  systemd:
+    name: "store-mqtt-data.service"
+    daemon_reload: yes
+    enabled: yes
+    state: started
+  when: mqttdata_service_status.status.ActiveState != "active"
+
+- name: Restart store-mqtt-data if already running
+  service:
+    name: "store-mqtt-data.service"
+    state: restarted
+  when: mqttdata_service_status.status.ActiveState == "active"

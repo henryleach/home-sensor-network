@@ -1,0 +1,16 @@
+[mqtt-server]
+host=127.0.0.1
+port=1883
+# in seconds
+timeout=60
+
+[storage-settings]
+archive_interval_s=600
+db_path={{ monitoring_db_path }}
+
+[client]
+client_id={{ client_id }}
+username={{ mqtt_username }}
+password={{ mqtt_password }}
+# debug | *info* | warning | error | critical
+log_level=info

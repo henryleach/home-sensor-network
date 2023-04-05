@@ -1,0 +1,11 @@
+*~
+
+# Don't copy hosts files, as they're too specific
+host*.ini
+
+# Don't sync actual passwords, or private keys kept in this directory
+ansible-playbooks/vars/mqtt-passwords.yml
+ansible-playbooks/keys/*
+
+# Remove vagrant hidden files
+Vagrant/.vagrant/*
