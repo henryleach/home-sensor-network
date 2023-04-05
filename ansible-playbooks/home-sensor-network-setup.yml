@@ -13,8 +13,8 @@
       when: yes
   
   roles:
-    #- basic-pi-setup
-    #- basic-debian-setup  # logrotate, chrony etc. 
-    # - setup-weatherdata-collection
+    - basic-pi-setup
+    - basic-debian-setup
+    - setup-weatherdata-collection
     - setup-mqtt-server
-    # - backup-sqlite-db
+    - backup-sqlite-db

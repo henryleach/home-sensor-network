@@ -17,7 +17,7 @@
 - name: Force system time update
   command: "chronyc makestep"
 
-- name: Unsure SSH basics are set
+- name: Ensure SSH basics are set
   lineinfile:
     dest: "/etc/ssh/sshd_config"
     regexp: "{{ item.regexp }}"
