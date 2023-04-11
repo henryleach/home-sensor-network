@@ -1,6 +1,38 @@
 #+TITLE: Home Sensor Network Ansible Roles
 #+DATE: <2023-04-05 Wed>
 
-Contains various [[https://www.ansible.com/][Ansible]] roles for setting up a home sensor network on a Raspberry Pi server. Described in more detail in the blog post series on [[http://www.henryleach.com/2023/03/home-sensor-network-part-1-the-plan/][creating a home sensor network]]. For details please read those.
+Contains various [[https://www.ansible.com/][Ansible]] roles for setting up a home sensor network on a Raspberry Pi server. Described in more detail in the blog post series on [[http://www.henryleach.com/2023/03/home-sensor-network-part-1-the-plan/][creating a home sensor network]].
 
+Currently it contains the following roles in the ~/ansible-playbooks/roles~ directory, which can all be run from the ~home-sensor-network-setup.yml~ file.
 
+Variables are set in the files in the ~/vars~ directory, specifically ~sensor-vars.yml~ and a file ~mqtt-passwords.yml~, for the format of the latter copy ~example-~mqtt-passwords.yml~ and rename it.
+
+* Playbooks
+
+** create-pi-user.yml
+
+Only used for Vagrant boxes to create a user called 'pi' that can be used to run the other playbooks against as a test. Will use a SSH key at ~/keys/pi-server.pub~, which is not in this repository and you should use your own.
+
+This playbook is provisioned in the vagrantfile, and once run all other playbooks can run with the 'pi' user as the installation user.
+
+* Roles
+
+** basic-pi-setup
+
+Raspberry Pi specific optimisation that changes the memory split to reduce the amount the GPU gets, as we're not running a display.
+
+** basic-debian-setup
+
+Basic Debian/Raspberry Pi OS server setup that ensures basic security and admin steps.
+
+** setup-weatherdata-collection
+
+Creates a SQLite database that downloads and stores the regular observations recorded by the Deutsche Wetterdienst (DWD), mostly using the Python script [[https://github.com/henryleach/get-dwd-weather-data][get-dwd-weather-data]] and sets up an appropriate cron job.
+
+** setup-mqtt-server
+
+Sets up a Mosquitto MQTT broker, and installs the [[https://github.com/henryleach/store-mqtt-data][store-mqtt-data]] script, as well as associated SystemD unit files and passwords so data from temperature sensors and utilities can be sent to it, and then recorded in an SQLite database.
+
+** backup-sqlite-db
+
+Installs a simple Python script and cron job to back up a database on a daily basis, and save it as a zipped tarfile.
