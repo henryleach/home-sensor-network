@@ -5,7 +5,7 @@ Contains various [[https://www.ansible.com/][Ansible]] roles for setting up a ho
 
 Currently it contains the following roles in the ~/ansible-playbooks/roles~ directory, which can all be run from the ~home-sensor-network-setup.yml~ file.
 
-Variables are set in the files in the ~/vars~ directory, specifically ~sensor-vars.yml~ and a file ~mqtt-passwords.yml~, for the format of the latter copy ~example-~mqtt-passwords.yml~ and rename it.
+Variables are set in the files in the ~/vars~ directory, specifically ~sensor-vars.yml~ and a file ~mqtt-passwords.yml~, for the format of the latter copy ~example-mqtt-passwords.yml~ and rename it, and add your own password and username.
 
 * Playbooks
 
