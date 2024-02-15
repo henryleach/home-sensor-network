@@ -1,0 +1,150 @@
+---
+- name: Install programs and dependencies.
+  apt:
+    state: present
+    name:
+      - libssl-dev
+      - nginx
+      - pip
+      - python3
+      - python3-venv
+      - git
+      - sqlite3
+      - libopenblas-dev
+
+# last item is a dependecy that Pis seem to need for numpy to work
+
+- name: Install Python3 pyopenssl dependency
+  pip:
+    state: present
+    name:
+      - pyopenssl
+
+- name: Create directory for self-signed TLS Certs.
+  file:
+    path: "{{ certificate_dir }}/{{ server_hostname }}"
+    state: directory
+    # mode: 0755
+
+- name: Generate an OpenSSL private key
+  openssl_privatekey:
+    path: "{{ certificate_dir }}/{{ server_hostname }}/privkey.pem"
+
+- name: Generate an OpenSSL CSR
+  openssl_csr:
+    path: "{{ certificate_dir }}/{{ server_hostname }}.csr"
+    privatekey_path: "{{ certificate_dir }}/{{ server_hostname }}/privkey.pem"
+    common_name: "{{ server_hostname }}"
+
+- name: Generate a Self Signed OpenSSL certificate
+  openssl_certificate:
+    path: "{{ certificate_dir }}/{{ server_hostname }}/fullchain.pem"
+    privatekey_path: "{{ certificate_dir }}/{{ server_hostname }}/privkey.pem"
+    csr_path: "{{ certificate_dir }}/{{ server_hostname }}.csr"
+    provider: selfsigned
+
+- name: Get nginx service state
+  service_facts:
+  register: service_states
+    
+- name: Remove default nginx vhost config file (if configured).
+  file:
+    path: "{{ nginx_default_vhost_path }}"
+    state: absent
+
+- name: Ensure nginx_vhost_path exists.
+  file:
+    path: "{{ nginx_vhost_path }}"
+    state: directory
+    mode: 0755
+  notify: reload nginx
+
+- name: Ensure Define nginx_user
+  set_fact:
+    nginx_user: "{{ __nginx_user }}"
+  when: nginx_user is not defined
+
+- name: Ensure docroot exists
+  file:
+    path: "{{ nginx_docroot }}"
+    state: directory
+
+# If you were using a normal HTML this is where you'd copy it.
+- name: Copy example index.html into place
+  copy:
+    src: files/index.html
+    dest: "{{ nginx_docroot }}/index.html"
+    mode: 0755
+  when: false
+
+- name: Clone webview site
+  git:
+    repo: "https://github.com/henryleach/home-sensor-website.git"
+    dest: "{{ install_dir }}/webview"
+    force: true
+  become: yes
+  become_user: "{{ deploy_user }}"
+
+- name: Create webview venv
+  command:
+    cmd: "python3 -m venv {{ webview_venv_path }} --upgrade-deps"
+    creates: "{{ webview_venv_path }}/bin/activate"
+  become: yes
+  become_user: "{{ deploy_user }}"
+
+- name: Install packages in venv
+  pip:
+    executable: "{{ webview_venv_path }}/bin/pip3"
+    requirements: "{{ install_dir }}/webview/requirements.txt"
+  become: yes
+  become_user: "{{ deploy_user }}"
+
+- name: Install webview config file
+  template:
+    src: templates/hosewebview.config.py.j2
+    dest: "{{ webview_config_path }}"
+  become: yes
+  become_user: "{{ deploy_user }}"
+  when: not is_test
+
+- name: Remove config, if exists, when running in test config
+  file:
+    path: "{{ webview_config_path }}"
+    state: absent
+  when: is_test
+  
+- name: Create site test DB
+  command:
+    chdir: "{{ install_dir }}/webview/tests"
+    cmd: "{{ webview_venv_path }}/bin/python create-example-db.py"
+  become: yes
+  become_user: "{{ deploy_user }}"
+  when: is_test
+  
+- name: Install Gunicorn service file
+  template:
+    src: templates/hosewebview.service.j2
+    dest: /etc/systemd/system/hosewebview.service
+    mode: 0644
+
+- name: Enable Gunicorn
+  service:
+    name: hosewebview
+    state: started
+    enabled: true
+  notify: restart gunicorn
+  
+- name: Copy HoSe Webview Nginx server configuration in place.
+  template:
+    src: templates/hosewebview.conf.j2
+    dest: /etc/nginx/sites-enabled/hosewebview.conf
+    mode: 0644
+  notify: reload nginx
+
+- name: Enable nginx
+  service:
+    name: nginx
+    state: started
+    enabled: true
+  notify: restart nginx
+    

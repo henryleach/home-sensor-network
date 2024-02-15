@@ -3,10 +3,11 @@
   become: yes
 
 
-  vars_file:
+  vars_files:
     - vars/sensor-vars.yml
     - vars/mqtt-passwords.yml
-  
+    - vars/webview-vars.yml
+    
   pre_tasks:
     - name: Update apt cache if needed.
       apt: update_cache=yes cache_valid_time=3600
@@ -18,3 +19,4 @@
     - setup-weatherdata-collection
     - setup-mqtt-server
     - backup-sqlite-db
+    - setup-hose-webview

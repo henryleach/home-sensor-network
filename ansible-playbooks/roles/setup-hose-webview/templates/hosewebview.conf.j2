@@ -1,0 +1,20 @@
+
+server {
+       listen 80 default_server;
+       server_name _;
+       index index.html;
+       return 301 https://$host$request_uri;
+	}
+
+server {
+       listen 443 ssl default_server;
+       server_name {{ server_hostname }};
+
+       location / {
+       		include proxy_params;
+        	proxy_pass http://unix:{{ install_dir }}/webview/hosewebview.sock;
+		}
+
+       ssl_certificate {{ certificate_dir }}/{{ server_hostname }}/fullchain.pem;
+       ssl_certificate_key {{ certificate_dir }}/{{ server_hostname }}/privkey.pem;
+}

@@ -9,3 +9,5 @@ ansible-playbooks/keys/*
 
 # Remove vagrant hidden files
 Vagrant/.vagrant/*
+
+*.sqlite3

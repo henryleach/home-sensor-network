@@ -34,7 +34,6 @@
         append: yes
         create_home: yes
         password: "{{ pi_initial_password | password_hash('sha512', password_salt) }}"
-#        password: "{{ pi_initial_password }}"
 
     - name: deploy SSH key
       authorized_key:

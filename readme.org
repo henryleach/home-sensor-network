@@ -36,3 +36,13 @@ Sets up a Mosquitto MQTT broker, and installs the [[https://github.com/henryleac
 ** backup-sqlite-db
 
 Installs a simple Python script and cron job to back up a database on a daily basis, and save it as a zipped tarfile.
+
+** setup-hose-webview
+
+This installs an nginx server, along with the WSGI server Gunicorn, and the Python Flask based [[https://github.com/henryleach/home-sensor-website][Home Sensor Website]].
+
+The defaults will create an example installation with dummy data, and think it's set to the domain 'example.com'.
+
+You will want to create an additional variables file ~vars/webview-vars.yml~ such as the domain name, and that ~is_test: false~ so that it installs the templated configuration file that tells it where to find the Sqlite database with the data created by the MQTT server.
+
+Depending on your server, you may want to edit the systemd service file in the ~templates~ directory and change the number of workers for Gunicorn. I've set it to only 1 worker, as this is deployed on a v1 Raspberry Pi, and more workers causes them to complain about out of memory errors and crash.

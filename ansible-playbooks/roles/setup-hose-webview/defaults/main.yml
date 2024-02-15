@@ -1,0 +1,17 @@
+---
+certificate_dir: "/etc/ssl/private"
+server_hostname: "example.com"
+nginx_docroot: "/var/www/html"
+
+# Debian specific vars from https://github.com/geerlingguy/ansible-role-nginx/blob/master/vars/Debian.yml
+nginx_vhost_path: "/etc/nginx/sites-enabled"
+nginx_default_vhost_path: "/etc/nginx/sites-enabled/default"
+__nginx_user: "www-data"
+
+deploy_user: "pi"
+install_dir: "/home/{{ deploy_user }}/home-monitor"
+webview_venv_path: "{{ install_dir }}/venvs/webview"
+# When is_test is true, the config file won't be deployed.
+is_test: true
+webview_config_path: "{{ install_dir }}/webview/hosewebview/config.py"
+
