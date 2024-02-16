@@ -136,7 +136,7 @@
   
 - name: Copy HoSe Webview Nginx server configuration in place.
   template:
-    src: templates/hosewebview.conf.j2
+    src: templates/hosewebview.https.conf.j2
     dest: /etc/nginx/sites-enabled/hosewebview.conf
     mode: 0644
   notify: reload nginx

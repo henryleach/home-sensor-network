@@ -11,3 +11,5 @@ ansible-playbooks/keys/*
 Vagrant/.vagrant/*
 
 *.sqlite3
+\#*
+.#*

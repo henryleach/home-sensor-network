@@ -1,0 +1,30 @@
+
+# To redirect to HTTPS only, uncomment this first server, which sets a perminant
+# re-direct, and comment out the line 'listen 80...' in the second server block.
+# server {
+#        listen 80 default_server;
+#        server_name _;
+#        index index.html;
+#        return 301 https://$host$request_uri;
+# 	}
+
+# This serves the page on both HTTP and HTTPS, but most browsers will now
+# force HTTPs
+server {
+       listen 80 default_server;
+       listen 443 ssl default_server;
+       server_name {{ server_hostname }};
+
+       location / {
+       		include proxy_params;
+        	proxy_pass http://unix:{{ install_dir }}/webview/hosewebview.sock;
+		proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        	proxy_set_header X-Forwarded-Proto $scheme;
+        	proxy_set_header X-Forwarded-Host $host;
+        	proxy_set_header X-Forwarded-Prefix /;
+
+		}
+
+       ssl_certificate {{ certificate_dir }}/{{ server_hostname }}/fullchain.pem;
+       ssl_certificate_key {{ certificate_dir }}/{{ server_hostname }}/privkey.pem;
+}

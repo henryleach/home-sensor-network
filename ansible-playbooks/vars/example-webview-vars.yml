@@ -1,0 +1,5 @@
+---
+# webview
+default_station: "Station Name"
+is_test: false
+server_hostname: "example.com"

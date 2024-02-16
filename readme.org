@@ -3,17 +3,22 @@
 
 Contains various [[https://www.ansible.com/][Ansible]] roles for setting up a home sensor network on a Raspberry Pi server. Described in more detail in the blog post series on [[http://www.henryleach.com/2023/03/home-sensor-network-part-1-the-plan/][creating a home sensor network]].
 
-Currently it contains the following roles in the ~/ansible-playbooks/roles~ directory, which can all be run from the ~home-sensor-network-setup.yml~ file.
+Currently it contains the following roles in the ~/ansible-playbooks/roles~ directory, which can all be run from the ~home-sensor-network-setup.yml~ playbook with you hosts file e.g.
+: ansible-playbook home-sensor-network-setup.yml -h your-hosts-file.ini
 
-Variables are set in the files in the ~/vars~ directory, specifically ~sensor-vars.yml~ and a file ~mqtt-passwords.yml~, for the format of the latter copy ~example-mqtt-passwords.yml~ and rename it, and add your own password and username.
+Variables can be set in the files in the ~/vars~ directory, specifically ~sensor-vars.yml~ and a file ~mqtt-passwords.yml~, for the format of the latter copy ~example-mqtt-passwords.yml~ and rename it, and add your own password and username.
 
 * Playbooks
-
 ** create-pi-user.yml
 
 Only used for Vagrant boxes to create a user called 'pi' that can be used to run the other playbooks against as a test. Will use a SSH key at ~/keys/pi-server.pub~, which is not in this repository and you should use your own.
 
 This playbook is provisioned in the vagrantfile, and once run all other playbooks can run with the 'pi' user as the installation user.
+** home-sensor-network-setup.yml
+
+This will run all of the roles one after the other and install the complete home sensor network onto your host, using the variables set in the files imported from the ~vars~ directory, which will then overwrite any variables set in then ~defaults~ directory of each role.
+
+Comment out the ones you don't need.
 
 * Roles
 
@@ -39,10 +44,18 @@ Installs a simple Python script and cron job to back up a database on a daily ba
 
 ** setup-hose-webview
 
-This installs an nginx server, along with the WSGI server Gunicorn, and the Python Flask based [[https://github.com/henryleach/home-sensor-website][Home Sensor Website]].
+*Don't run this on the open internet!*
+#+begin_example
+This uses whatever old version of Nginx is in the distro's repositories, doesn't run any firewalls of it's own etc. Therefore it's only safe to use on private network behind a network firewall.
+#+end_example
+
+This installs an Nginx server, along with the WSGI server Gunicorn, and the Python Flask based [[https://github.com/henryleach/home-sensor-website][Home Sensor Website]].
+
+The server will create a self-signed certificate, and serve the page on both HTTP and HTTPS (to which most modern browsers will re-direct you). This is likely to cause a warning on your browser, and you'll have to click 'Advanced' or something to accept the risk that this connection is self-signed.
 
 The defaults will create an example installation with dummy data, and think it's set to the domain 'example.com'.
 
-You will want to create an additional variables file ~vars/webview-vars.yml~ such as the domain name, and that ~is_test: false~ so that it installs the templated configuration file that tells it where to find the Sqlite database with the data created by the MQTT server.
+You will want to create an additional variables file ~vars/webview-vars.yml~ such as the domain name, and that ~is_test: false~ so that it installs the templated configuration file that tells it where to find the Sqlite database with the data created by the MQTT server. See ~vars/example-webview-vars.yml~. 
 
-Depending on your server, you may want to edit the systemd service file in the ~templates~ directory and change the number of workers for Gunicorn. I've set it to only 1 worker, as this is deployed on a v1 Raspberry Pi, and more workers causes them to complain about out of memory errors and crash.
+Depending on your server, you may want to edit the SystemD service file in the ~templates~ directory and change the number of workers for Gunicorn. It is set it to only 1 worker, as this is deployed on a v1 Raspberry Pi with a measly 512MB of RAM, and more than one worker caused them to consciously crash because of out of memory errors.
+
