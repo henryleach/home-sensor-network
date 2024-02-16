@@ -45,9 +45,9 @@ Installs a simple Python script and cron job to back up a database on a daily ba
 ** setup-hose-webview
 
 *Don't run this on the open internet!*
-#+begin_example
+#+begin_quote
 This uses whatever old version of Nginx is in the distro's repositories, doesn't run any firewalls of it's own etc. Therefore it's only safe to use on private network behind a network firewall.
-#+end_example
+#+end_quote
 
 This installs an Nginx server, along with the WSGI server Gunicorn, and the Python Flask based [[https://github.com/henryleach/home-sensor-website][Home Sensor Website]].
 
@@ -57,5 +57,5 @@ The defaults will create an example installation with dummy data, and think it's
 
 You will want to create an additional variables file ~vars/webview-vars.yml~ such as the domain name, and that ~is_test: false~ so that it installs the templated configuration file that tells it where to find the Sqlite database with the data created by the MQTT server. See ~vars/example-webview-vars.yml~. 
 
-Depending on your server, you may want to edit the SystemD service file in the ~templates~ directory and change the number of workers for Gunicorn. It is set it to only 1 worker, as this is deployed on a v1 Raspberry Pi with a measly 512MB of RAM, and more than one worker caused them to consciously crash because of out of memory errors.
+Depending on your server, you may want to edit the SystemD service file in the ~templates~ directory and change the number of workers for Gunicorn. It is set it to only 1 worker, as this is deployed on a v1 Raspberry Pi with a measly 512MB of RAM, and more than one worker caused them to continuously crash and restart because of out of memory errors.
 
