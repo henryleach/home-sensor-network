@@ -3,3 +3,4 @@
 default_station: "Station Name"
 is_test: false
 server_hostname: "example.com"
+proxy_levels: 1
