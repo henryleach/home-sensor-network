@@ -12,7 +12,7 @@
       - sqlite3
       - libopenblas-dev
 
-# last item is a dependecy that Pis seem to need for numpy to work
+# last item is a dependency that Pis seem to need for numpy to work
 
 - name: Install Python3 pyopenssl dependency
   pip:
@@ -84,7 +84,8 @@
     force: true
   become: yes
   become_user: "{{ deploy_user }}"
-
+  notify: restart gunicorn
+  
 - name: Create webview venv
   command:
     cmd: "python3 -m venv {{ webview_venv_path }} --upgrade-deps"
@@ -120,6 +121,11 @@
   become: yes
   become_user: "{{ deploy_user }}"
   when: is_test
+
+- name: Create indices on Sqlite DB
+  command:
+    chdir: "{{ install_dir }}/webview"
+    cmd: "{{ webview_venv_path }}/bin/flask --app hosewebview create-indices"
   
 - name: Install Gunicorn service file
   template:
